@@ -25,11 +25,23 @@ const styles: any = {
     }
 }
 
+const compareVersions = (v1, v2) => {
+    const parts1 = v1.split('.').map(Number)
+    const parts2 = v2.split('.').map(Number)
+
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const num1 = i < parts1.length ? parts1[i] : 0
+        const num2 = i < parts2.length ? parts2[i] : 0
+
+        if (num1 > num2) return 1
+        if (num2 > num1) return -1
+    }
+
+    return 0
+}
+
 const isLatestVersion = (currentVersion, allVersions) => {
-    // Simple version comparison logic (may need to adjust based on your versioning format)
-    const maxVersion = Math.max(...allVersions.map(v => parseFloat(v.replace(/[^0-9.]/g, ''))))
-    const current = parseFloat(currentVersion.replace(/[^0-9.]/g, ''))
-    return current >= maxVersion
+    return allVersions.every(otherVersion => compareVersions(currentVersion, otherVersion) >= 0)
 }
 
 const fetchApplications = async () => {
