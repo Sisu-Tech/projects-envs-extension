@@ -122,7 +122,10 @@ const ApplicationTable = () => {
                     }
                     return acc
                 }, {})
-                setApplications(groupedApps)
+                const sortedApps = Object.entries(groupedApps).sort(([name1], [name2]) =>
+                    name1.localeCompare(name2)
+                )
+                setApplications(sortedApps)
                 setProjects(Array.from(projectSet))
             } else {
                 setError('Failed to load applications')
