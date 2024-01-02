@@ -135,7 +135,7 @@ const ApplicationTable = () => {
     if (window && window.extensionsAPI) {
         window.extensionsAPI.registerSystemLevelExtension(
             ApplicationTable,
-            'ApplicationTable',
+            'Applications Table',
             '/application-table',
             'fa-table'
         )
