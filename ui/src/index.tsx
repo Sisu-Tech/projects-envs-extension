@@ -57,6 +57,17 @@ const parseImageTag = images => {
         .join(', ')
 }
 
+const getCellStyle = (version, projectImages) => {
+    if (version === 'N/A') {
+        return styles.tableCell // Return default style for 'N/A'
+    }
+    const isLatest = isLatestVersion(version, Object.values(projectImages))
+    return {
+        ...styles.tableCell,
+        backgroundColor: isLatest ? 'green' : 'yellow'
+    }
+}
+
 const ApplicationTable = () => {
     const [applications, setApplications] = useState({})
     const [projects, setProjects] = useState([])
@@ -128,15 +139,8 @@ const ApplicationTable = () => {
                         <div style={styles.tableCell}>{genericName}</div>
                         {projects.map(project => {
                             const version = projectImages[project] || 'N/A'
-                            const isLatest = isLatestVersion(version, Object.values(projectImages))
                             return (
-                                <div
-                                    style={{
-                                        ...styles.tableCell,
-                                        backgroundColor: isLatest ? '#18be94' : '#f5c43e'
-                                    }}
-                                    key={project}
-                                >
+                                <div style={getCellStyle(version, projectImages)} key={project}>
                                     {version}
                                 </div>
                             )
