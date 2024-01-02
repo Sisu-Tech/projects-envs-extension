@@ -10,5 +10,5 @@ The project introduces the Projects as environments dashboard into the Argo CD W
 
 ```
 kubectl apply -n argocd \
-    -f https://raw.githubusercontent.com/argoproj-labs/rollout-extension/v0.2.1/manifests/install.yaml
+    -f https://github.com/Sisu-Tech/projects-envs-extension/blob/main/manifests/install.yaml
 ```
