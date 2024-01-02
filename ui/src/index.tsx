@@ -15,46 +15,53 @@ const fetchApplications = async () => {
     }
 }
 
+const parseImageTag = (images) => {
+    // Assuming images is an array of strings like 'registry/repository:tag'
+    return images.map(image => {
+        const parts = image.split(':');
+        return parts.length > 1 ? parts[1] : 'latest'; // Default to 'latest' if no tag is specified
+    }).join(', ');
+};
+
 const ApplicationTable = () => {
-    const [applications, setApplications] = useState({})
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+    const [applications, setApplications] = useState({});
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchApplications().then(data => {
             if (data) {
-                const filteredApps = data.items.filter(app => {
-                    const labels = app.metadata.labels
-                    return (
-                        labels &&
-                        labels.genericApplicationName &&
-                        labels.applicationType === 'services' &&
-                        labels.environment !== 'dev'
-                    )
-                })
-                const groupedApps = filteredApps.reduce((acc, app) => {
-                    const genericName = app.metadata.labels.genericApplicationName || 'N/A'
-                    const project = app.spec.project
-                    acc[genericName] = {
-                        ...(acc[genericName] || {}),
-                        [project]: app.spec.source?.image || 'N/A'
+                const projectSet = new Set();
+                const groupedApps = data.items.reduce((acc, app) => {
+                    const labels = app.metadata.labels;
+                    if (labels && labels.genericApplicationName && labels.applicationType === 'services' && labels.environment !== 'dev') {
+                        const genericName = labels.genericApplicationName;
+                        const project = app.spec.project;
+                        projectSet.add(project);
+
+                        if (!acc[genericName]) {
+                            acc[genericName] = {};
+                        }
+                        acc[genericName][project] = parseImageTag(app.status.summary.images);
                     }
-                    return acc
-                }, {})
-                setApplications(groupedApps)
+                    return acc;
+                }, {});
+                setApplications(groupedApps);
+                setProjects(Array.from(projectSet));
             } else {
-                setError('Failed to load applications')
+                setError('Failed to load applications');
             }
-            setLoading(false)
-        })
-    }, [])
+            setLoading(false);
+        });
+    }, []);
 
     if (loading) {
-        return <div>Loading...</div>
+        return <div>Loading...</div>;
     }
 
     if (error) {
-        return <div>Error: {error}</div>
+        return <div>Error: {error}</div>;
     }
 
     return (
@@ -63,27 +70,24 @@ const ApplicationTable = () => {
                 <thead>
                     <tr>
                         <th>Generic Application Name</th>
-                        {Object.keys(applications).map(project => (
-                            <th key={project}>{project}</th>
-                        ))}
+                        {projects.map(project => <th key={project}>{project}</th>)}
                     </tr>
                 </thead>
                 <tbody>
                     {Object.entries(applications).map(([genericName, projectImages]) => (
                         <tr key={genericName}>
                             <td>{genericName}</td>
-                            {Object.values(projectImages).map((image, index) => (
-                                <td key={index}>{image}</td>
-                            ))}
+                            {projects.map(project => <td key={project}>{projectImages[project] || 'N/A'}</td>)}
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
-    )
-}
+    );
+};
 
-((window: any) => {
+
+;((window: any) => {
     if (window && window.extensionsAPI) {
         window.extensionsAPI.registerSystemLevelExtension(
             ApplicationTable,
