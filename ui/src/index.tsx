@@ -52,7 +52,7 @@ const parseImageTag = images => {
     return images
         .map(image => {
             const parts = image.split(':')
-            return parts.length > 1 ? parts[1] : 'latest' // Default to 'latest' if no tag is specified
+            return parts.length > 1 ? parts[1].slice(0, 14) : 'latest' // Default to 'latest' if no tag is specified
         })
         .join(', ')
 }
