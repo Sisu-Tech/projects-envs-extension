@@ -98,6 +98,7 @@ const ApplicationTable = () => {
     const [projects, setProjects] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [sortedGenericNames, setSortedGenericNames] = useState([])
 
     useEffect(() => {
         fetchApplications().then(data => {
@@ -122,10 +123,11 @@ const ApplicationTable = () => {
                     }
                     return acc
                 }, {})
-                const sortedApps = Object.entries(groupedApps).sort(([name1], [name2]) =>
-                    name1.localeCompare(name2)
+                const sortedGenericNames = Object.keys(groupedApps).sort((a, b) =>
+                    a.localeCompare(b)
                 )
-                setApplications(sortedApps)
+                setSortedGenericNames(sortedGenericNames)
+                setApplications(applications)
                 setProjects(Array.from(projectSet))
             } else {
                 setError('Failed to load applications')
@@ -156,8 +158,9 @@ const ApplicationTable = () => {
                 ))}
             </div>
             <div className='argo-table-body'>
-                {Object.entries(applications).map(([genericName, projectImages], index) => (
-                    <div
+                {sortedGenericNames.map((genericName, index) => {
+                    const projectImages = applications[genericName]
+                    ;<div
                         style={{
                             ...styles.tableRow,
                             ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
@@ -174,7 +177,7 @@ const ApplicationTable = () => {
                             )
                         })}
                     </div>
-                ))}
+                })}
             </div>
         </div>
     )
