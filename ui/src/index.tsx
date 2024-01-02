@@ -169,7 +169,7 @@ const ApplicationTable = () => {
                     >
                         <div style={styles.tableCell}>{genericName}</div>
                         {projects.map(project => {
-                            const version = projectImages[project] || 'N/A'
+                            const version = projectImages?.[project] || 'N/A'
                             return (
                                 <div style={getCellStyle(version, projectImages)} key={project}>
                                     {version}
