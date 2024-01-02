@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { Page } from 'argo-ui'
 
 const styles: any = {
     tableWrapper: {
@@ -105,52 +104,47 @@ const ApplicationTable = () => {
     }
 
     return (
-        <Page title='Applications Table'>
-            <div style={styles.tableWrapper}>
-                <div
-                    className='argo-table-header'
-                    style={{ ...styles.tableRow, ...styles.tableHeader }}
-                >
-                    <div style={styles.tableCell}>Generic Application Name</div>
-                    {projects.map(project => (
-                        <div style={styles.tableCell} key={project}>
-                            {project}
-                        </div>
-                    ))}
-                </div>
-                <div className='argo-table-body'>
-                    {Object.entries(applications).map(([genericName, projectImages], index) => (
-                        <div
-                            style={{
-                                ...styles.tableRow,
-                                ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
-                            }}
-                            key={genericName}
-                        >
-                            <div style={styles.tableCell}>{genericName}</div>
-                            {projects.map(project => {
-                                const version = projectImages[project] || 'N/A'
-                                const isLatest = isLatestVersion(
-                                    version,
-                                    Object.values(projectImages)
-                                )
-                                return (
-                                    <div
-                                        style={{
-                                            ...styles.tableCell,
-                                            backgroundColor: isLatest ? '#18be94' : '#f5c43e'
-                                        }}
-                                        key={project}
-                                    >
-                                        {version}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    ))}
-                </div>
+        <div style={styles.tableWrapper}>
+            <div
+                className='argo-table-header'
+                style={{ ...styles.tableRow, ...styles.tableHeader }}
+            >
+                <div style={styles.tableCell}>Generic Application Name</div>
+                {projects.map(project => (
+                    <div style={styles.tableCell} key={project}>
+                        {project}
+                    </div>
+                ))}
             </div>
-        </Page>
+            <div className='argo-table-body'>
+                {Object.entries(applications).map(([genericName, projectImages], index) => (
+                    <div
+                        style={{
+                            ...styles.tableRow,
+                            ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
+                        }}
+                        key={genericName}
+                    >
+                        <div style={styles.tableCell}>{genericName}</div>
+                        {projects.map(project => {
+                            const version = projectImages[project] || 'N/A'
+                            const isLatest = isLatestVersion(version, Object.values(projectImages))
+                            return (
+                                <div
+                                    style={{
+                                        ...styles.tableCell,
+                                        backgroundColor: isLatest ? '#18be94' : '#f5c43e'
+                                    }}
+                                    key={project}
+                                >
+                                    {version}
+                                </div>
+                            )
+                        })}
+                    </div>
+                ))}
+            </div>
+        </div>
     )
 }
 
