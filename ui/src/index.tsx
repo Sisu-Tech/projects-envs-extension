@@ -4,7 +4,8 @@ const styles: any = {
     tableWrapper: {
         width: '100%',
         margin: '0 auto',
-        borderCollapse: 'collapse'
+        borderCollapse: 'collapse',
+        padding: '10px',
     },
     tableRow: {
         display: 'flex',
