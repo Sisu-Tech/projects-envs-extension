@@ -160,23 +160,25 @@ const ApplicationTable = () => {
             <div className='argo-table-body'>
                 {sortedGenericNames.map((genericName, index) => {
                     const projectImages = applications[genericName]
-                    ;<div
-                        style={{
-                            ...styles.tableRow,
-                            ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
-                        }}
-                        key={genericName}
-                    >
-                        <div style={styles.tableCell}>{genericName}</div>
-                        {projects.map(project => {
-                            const version = projectImages?.[project] || 'N/A'
-                            return (
-                                <div style={getCellStyle(version, projectImages)} key={project}>
-                                    {version}
-                                </div>
-                            )
-                        })}
-                    </div>
+                    return (
+                        <div
+                            style={{
+                                ...styles.tableRow,
+                                ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
+                            }}
+                            key={genericName}
+                        >
+                            <div style={styles.tableCell}>{genericName}</div>
+                            {projects.map(project => {
+                                const version = projectImages?.[project] || 'N/A'
+                                return (
+                                    <div style={getCellStyle(version, projectImages)} key={project}>
+                                        {version}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
                 })}
             </div>
         </div>
