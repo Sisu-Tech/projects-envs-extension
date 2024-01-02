@@ -127,7 +127,7 @@ const ApplicationTable = () => {
                     a.localeCompare(b)
                 )
                 setSortedGenericNames(sortedGenericNames)
-                setApplications(applications)
+                setApplications(groupedApps)
                 setProjects(Array.from(projectSet))
             } else {
                 setError('Failed to load applications')
