@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react'
 const styles: any = {
     tableWrapper: {
         width: '100%',
-        margin: '0 auto',
-        borderCollapse: 'collapse',
-        padding: '10px',
+        maxHeight: '750px',
+        overflowY: 'auto',
+        position: 'relative'
     },
     tableRow: {
         display: 'flex',
@@ -17,8 +17,11 @@ const styles: any = {
         border: '1px solid #ddd',
         textAlign: 'left'
     },
-    tableHeader: {
+    tableHeaderRow: {
+        position: 'sticky',
+        top: 0,
         backgroundColor: '#f5f5f5',
+        zIndex: 1,
         borderBottom: '2px solid #ccc'
     },
     tableBodyRowEven: {
@@ -61,24 +64,33 @@ const fetchApplications = async () => {
 }
 
 const parseImageTag = images => {
-    // Assuming images is an array of strings like 'registry/repository:tag'
     return images
         .map(image => {
             const parts = image.split(':')
-            return parts.length > 1 ? parts[1].slice(0, 14) : 'latest' // Default to 'latest' if no tag is specified
+            return parts.length > 1 ? parts[1].slice(0, 14) : 'latest'
         })
         .join(', ')
 }
 
 const getCellStyle = (version, projectImages) => {
     if (version === 'N/A') {
-        return styles.tableCell // Return default style for 'N/A'
+        return styles.tableCell
     }
     const isLatest = isLatestVersion(version, Object.values(projectImages))
+    const backgroundColor = isLatest ? '#07bc0c' : '#f1c40f'
+
     return {
         ...styles.tableCell,
-        backgroundColor: isLatest ? 'green' : 'yellow'
+        backgroundColor: backgroundColor,
+        color: backgroundColor === '#07bc0c' ? 'white' : 'black'
     }
+}
+
+const formatProjectName = name => {
+    return name
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
 }
 
 const ApplicationTable = () => {
@@ -131,12 +143,12 @@ const ApplicationTable = () => {
         <div style={styles.tableWrapper}>
             <div
                 className='argo-table-header'
-                style={{ ...styles.tableRow, ...styles.tableHeader }}
+                style={{ ...styles.tableRow, ...styles.tableHeaderRow }}
             >
-                <div style={styles.tableCell}>Generic Application Name</div>
+                <div style={styles.tableCell}>Application Name</div>
                 {projects.map(project => (
                     <div style={styles.tableCell} key={project}>
-                        {project}
+                        {formatProjectName(project)}
                     </div>
                 ))}
             </div>
