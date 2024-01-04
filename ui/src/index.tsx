@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import './app.css'
 
 const styles: any = {
     tableWrapper: {
         width: '100%',
-        maxHeight: 'calc(100vh - 101.6px);',
+        maxHeight: 'calc(100vh - 101.6px)',
         overflowY: 'auto',
         position: 'relative'
     },
@@ -95,7 +95,7 @@ const getCellStyle = (version, projectImages) => {
     let backgroundColor = '#07bc0c';
     let color = '#white';
     if (version === 'N/A') {
-        backgroundColor = 'black';
+        backgroundColor = '';
     } else {
         const isLatest = isLatestVersion(version, Object.values(projectImages))
         if (!isLatest) {
@@ -198,7 +198,7 @@ const ApplicationTable = () => {
                                 const version = projectImages?.[project] || 'N/A'
                                 return (
                                     <div style={getCellStyle(version, projectImages)} key={project}>
-                                        {version}
+                                        {version === 'N/A' ? '' : version}
                                     </div>
                                 )
                             })}
