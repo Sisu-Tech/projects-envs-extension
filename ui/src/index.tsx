@@ -50,6 +50,11 @@ const isLatestVersion = (currentVersion, allVersions) => {
 
 const fetchApplications = async () => {
     try {
+        const labels = [
+            'environment!=dev',
+            'applicationType=services',
+        ];
+
         const fields = [
             'items.metadata.name',
             'items.metadata.labels',
@@ -60,8 +65,10 @@ const fetchApplications = async () => {
             'items.status.summary',
             'items.spec'
         ];
+
         const params = {
-            fields: fields.join(',')
+            fields: fields.join(','),
+            selector: labels.join(','),
         };
 
         const queryString = Object.entries(params)
@@ -132,9 +139,7 @@ const ApplicationTable = () => {
                     const labels = app.metadata.labels
                     if (
                         labels &&
-                        labels.genericApplicationName &&
-                        labels.applicationType === 'services' &&
-                        labels.environment !== 'dev'
+                        labels.genericApplicationName
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
