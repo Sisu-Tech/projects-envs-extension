@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import './app.css'
 
 const styles: any = {
     tableWrapper: {
         width: '100%',
-        maxHeight: '750px',
+        maxHeight: 'calc(100vh - 101.6px);',
         overflowY: 'auto',
         position: 'relative'
     },
@@ -50,9 +51,27 @@ const isLatestVersion = (currentVersion, allVersions) => {
 
 const fetchApplications = async () => {
     try {
-        const response = await fetch(
-            '/api/v1/applications?fields=items.metadata.name%2Citems.metadata.labels%2Citems.spec.project%2Citems.operation.sync%2Citems.status.sync.status%2Citems.status.health%2Citems.status.summary%2Citems.spec'
-        )
+        const fields = [
+            'items.metadata.name',
+            'items.metadata.labels',
+            'items.spec.project',
+            'items.operation.sync',
+            'items.status.sync.status',
+            'items.status.health',
+            'items.status.summary',
+            'items.spec'
+        ];
+        const params = {
+            fields: fields.join(',')
+        };
+
+        const queryString = Object.entries(params)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
+
+        const url = `/api/v1/applications?${queryString}`;
+
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Network response was not ok')
         }
@@ -73,16 +92,22 @@ const parseImageTag = images => {
 }
 
 const getCellStyle = (version, projectImages) => {
+    let backgroundColor = '#07bc0c';
+    let color = '#white';
     if (version === 'N/A') {
-        return styles.tableCell
+        backgroundColor = 'black';
+    } else {
+        const isLatest = isLatestVersion(version, Object.values(projectImages))
+        if (!isLatest) {
+            backgroundColor = '#f1c40f';
+            color = 'black';
+        }
     }
-    const isLatest = isLatestVersion(version, Object.values(projectImages))
-    const backgroundColor = isLatest ? '#07bc0c' : '#f1c40f'
 
     return {
         ...styles.tableCell,
-        backgroundColor: backgroundColor,
-        color: backgroundColor === '#07bc0c' ? 'white' : 'black'
+        backgroundColor,
+        color
     }
 }
 
@@ -185,15 +210,15 @@ const ApplicationTable = () => {
     )
 }
 
-;((window: any) => {
-    if (window && window.extensionsAPI) {
-        window.extensionsAPI.registerSystemLevelExtension(
-            ApplicationTable,
-            'Applications Table',
-            '/application-table',
-            'fa-table'
-        )
-    } else {
-        console.error('Argo CD extensions API is not available')
-    }
-})(window)
+    ; ((window: any) => {
+        if (window && window.extensionsAPI) {
+            window.extensionsAPI.registerSystemLevelExtension(
+                ApplicationTable,
+                'Applications Table',
+                '/application-table',
+                'fa-table'
+            )
+        } else {
+            console.error('Argo CD extensions API is not available')
+        }
+    })(window)
