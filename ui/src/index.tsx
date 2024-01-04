@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import './app.css'
 
 const styles: any = {
     tableWrapper: {
