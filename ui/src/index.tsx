@@ -202,7 +202,7 @@ const ApplicationTable = () => {
                         >
                             <div style={styles.tableCell}>{genericName}</div>
                             {projects.map(project => {
-                                const version = serviceApplications?.[project].imageTag || 'N/A'
+                                const version = serviceApplications?.[project]?.imageTag || 'N/A'
                                 const url = `https://argocd.sisutech.ee/applications/argocd/${serviceApplications?.[project].name}`;
                                 return (
                                     <div
