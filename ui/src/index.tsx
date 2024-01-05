@@ -103,7 +103,7 @@ const getCellStyle = (version, projectImages) => {
     if (version === 'N/A') {
         backgroundColor = '';
     } else {
-        const isLatest = isLatestVersion(version, Object.values(projectImages))
+        const isLatest = isLatestVersion(version, Object.values(projectImages).map((p: any) => p.imageTag));
         if (!isLatest) {
             backgroundColor = '#f1c40f';
             color = 'black';
@@ -148,7 +148,10 @@ const ApplicationTable = () => {
                         if (!acc[genericName]) {
                             acc[genericName] = {}
                         }
-                        acc[genericName][project] = parseImageTag(app.status.summary.images)
+                        acc[genericName][project] = {
+                            name: app.metadata.name,
+                            imageTag: parseImageTag(app.status.summary.images),
+                        };
                     }
                     return acc
                 }, {})
@@ -188,7 +191,7 @@ const ApplicationTable = () => {
             </div>
             <div className='argo-table-body'>
                 {sortedGenericNames.map((genericName, index) => {
-                    const projectImages = applications[genericName]
+                    const serviceApplications = applications[genericName]
                     return (
                         <div
                             style={{
@@ -199,9 +202,16 @@ const ApplicationTable = () => {
                         >
                             <div style={styles.tableCell}>{genericName}</div>
                             {projects.map(project => {
-                                const version = projectImages?.[project] || 'N/A'
+                                const version = serviceApplications?.[project].imageTag || 'N/A'
+                                const url = `https://argocd.sisutech.ee/applications/argocd/${serviceApplications?.[project].name}`;
                                 return (
-                                    <div style={getCellStyle(version, projectImages)} key={project}>
+                                    <div
+                                        style={getCellStyle(version, serviceApplications)}
+                                        key={project}
+                                        onClick={() => {
+                                            window.open(url, '_blank')
+                                        }}
+                                    >
                                         {version === 'N/A' ? '' : version}
                                     </div>
                                 )
