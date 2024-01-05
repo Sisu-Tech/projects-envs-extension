@@ -113,7 +113,8 @@ const getCellStyle = (version?, projectImages?) => {
     return {
         ...styles.tableCell,
         backgroundColor,
-        color
+        color,
+        cursor:'pointer'
     }
 }
 
@@ -204,10 +205,7 @@ const ApplicationTable = () => {
                             {projects.map(project => {
                                 const projectService = serviceApplications?.[project];
                                 if (!projectService) {
-                                    return <div
-                                        style={getCellStyle()}
-                                        key={project}
-                                    />
+                                    return <div key={project} />
                                 }
 
                                 const version = projectService.imageTag;
