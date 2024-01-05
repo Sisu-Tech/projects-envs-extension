@@ -97,10 +97,10 @@ const parseImageTag = images => {
         .join(', ')
 }
 
-const getCellStyle = (version, projectImages) => {
+const getCellStyle = (version?, projectImages?) => {
     let backgroundColor = '#07bc0c';
     let color = '#white';
-    if (version === 'N/A') {
+    if (!version) {
         backgroundColor = '';
     } else {
         const isLatest = isLatestVersion(version, Object.values(projectImages).map((p: any) => p.imageTag));
@@ -202,8 +202,16 @@ const ApplicationTable = () => {
                         >
                             <div style={styles.tableCell}>{genericName}</div>
                             {projects.map(project => {
-                                const version = serviceApplications?.[project]?.imageTag || 'N/A'
-                                const url = `https://argocd.sisutech.ee/applications/argocd/${serviceApplications?.[project].name}`;
+                                const projectService = serviceApplications?.[project];
+                                if (!projectService) {
+                                    return <div
+                                        style={getCellStyle()}
+                                        key={project}
+                                    />
+                                }
+
+                                const version = projectService.imageTag;
+                                const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`;
                                 return (
                                     <div
                                         style={getCellStyle(version, serviceApplications)}
@@ -212,7 +220,7 @@ const ApplicationTable = () => {
                                             window.open(url, '_blank')
                                         }}
                                     >
-                                        {version === 'N/A' ? '' : version}
+                                        {!version ? '' : version}
                                     </div>
                                 )
                             })}
