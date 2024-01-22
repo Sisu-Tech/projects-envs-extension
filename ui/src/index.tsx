@@ -50,7 +50,7 @@ const isLatestVersion = (currentVersion, allVersions) => {
 
 const fetchApplications = async () => {
     try {
-        const labels = ['applicationType=services']
+        const labels = ['environment!=dev', 'applicationType=services']
 
         const fields = [
             'items.metadata.name',
@@ -142,7 +142,8 @@ const ApplicationTable = () => {
                     if (
                         labels?.genericApplicationName &&
                         labels?.applicationType === 'services' &&
-                        (labels?.environment !== 'dev' || spec.destination.namespace === 'paco')
+                        (labels?.environment !== 'dev' ||
+                            spec.destination.namespace === 'paco')
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
