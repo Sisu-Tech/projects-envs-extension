@@ -50,10 +50,7 @@ const isLatestVersion = (currentVersion, allVersions) => {
 
 const fetchApplications = async () => {
     try {
-        const labels = [
-            'environment!=dev',
-            'applicationType=services',
-        ];
+        const labels = ['environment!=dev', 'applicationType=services']
 
         const fields = [
             'items.metadata.name',
@@ -64,20 +61,20 @@ const fetchApplications = async () => {
             'items.status.health',
             'items.status.summary',
             'items.spec'
-        ];
+        ]
 
         const params = {
             fields: fields.join(','),
-            selector: labels.join(','),
-        };
+            selector: labels.join(',')
+        }
 
         const queryString = Object.entries(params)
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-            .join('&');
+            .join('&')
 
-        const url = `/api/v1/applications?${queryString}`;
+        const url = `/api/v1/applications?${queryString}`
 
-        const response = await fetch(url);
+        const response = await fetch(url)
         if (!response.ok) {
             throw new Error('Network response was not ok')
         }
@@ -98,15 +95,18 @@ const parseImageTag = images => {
 }
 
 const getCellStyle = (version?, projectImages?) => {
-    let backgroundColor = '#07bc0c';
-    let color = '#white';
+    let backgroundColor = '#07bc0c'
+    let color = '#white'
     if (!version) {
-        backgroundColor = '';
+        backgroundColor = ''
     } else {
-        const isLatest = isLatestVersion(version, Object.values(projectImages).map((p: any) => p.imageTag));
+        const isLatest = isLatestVersion(
+            version,
+            Object.values(projectImages).map((p: any) => p.imageTag)
+        )
         if (!isLatest) {
-            backgroundColor = '#f1c40f';
-            color = 'black';
+            backgroundColor = '#f1c40f'
+            color = 'black'
         }
     }
 
@@ -138,9 +138,12 @@ const ApplicationTable = () => {
                 const projectSet = new Set()
                 const groupedApps = data.items.reduce((acc, app) => {
                     const labels = app.metadata.labels
+                    const spec = app.spec
                     if (
-                        labels &&
-                        labels.genericApplicationName
+                        labels?.genericApplicationName &&
+                        labels?.applicationType === 'services' &&
+                        (labels?.environment !== 'dev' ||
+                            spec.source.destination.namespace !== 'paco')
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
@@ -151,8 +154,8 @@ const ApplicationTable = () => {
                         }
                         acc[genericName][project] = {
                             name: app.metadata.name,
-                            imageTag: parseImageTag(app.status.summary.images),
-                        };
+                            imageTag: parseImageTag(app.status.summary.images)
+                        }
                     }
                     return acc
                 }, {})
@@ -203,13 +206,13 @@ const ApplicationTable = () => {
                         >
                             <div style={styles.tableCell}>{genericName}</div>
                             {projects.map(project => {
-                                const projectService = serviceApplications?.[project];
+                                const projectService = serviceApplications?.[project]
                                 if (!projectService) {
                                     return <div style={styles.tableCell} key={project} />
                                 }
 
-                                const version = projectService.imageTag;
-                                const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`;
+                                const version = projectService.imageTag
+                                const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`
                                 return (
                                     <div
                                         style={getCellStyle(version, serviceApplications)}
@@ -229,16 +232,15 @@ const ApplicationTable = () => {
         </div>
     )
 }
-
-    ; ((window: any) => {
-        if (window && window.extensionsAPI) {
-            window.extensionsAPI.registerSystemLevelExtension(
-                ApplicationTable,
-                'Applications Table',
-                '/application-table',
-                'fa-table'
-            )
-        } else {
-            console.error('Argo CD extensions API is not available')
-        }
-    })(window)
+;((window: any) => {
+    if (window && window.extensionsAPI) {
+        window.extensionsAPI.registerSystemLevelExtension(
+            ApplicationTable,
+            'Applications Table',
+            '/application-table',
+            'fa-table'
+        )
+    } else {
+        console.error('Argo CD extensions API is not available')
+    }
+})(window)
