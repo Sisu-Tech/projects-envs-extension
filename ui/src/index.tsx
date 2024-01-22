@@ -89,11 +89,14 @@ const parseImageTag = images => {
     return images
         ? images
               .map(image => {
+                  if (!image) {
+                      return 'N/A'
+                  }
                   const parts = image.split(':')
                   return parts.length > 1 ? parts[1].slice(0, 14) : 'latest'
               })
               .join(', ')
-        : null
+        : undefined
 }
 
 const getCellStyle = (version?, projectImages?) => {
