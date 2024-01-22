@@ -87,11 +87,13 @@ const fetchApplications = async () => {
 
 const parseImageTag = images => {
     return images
-        .map(image => {
-            const parts = image.split(':')
-            return parts.length > 1 ? parts[1].slice(0, 14) : 'latest'
-        })
-        .join(', ')
+        ? images
+              .map(image => {
+                  const parts = image.split(':')
+                  return parts.length > 1 ? parts[1].slice(0, 14) : 'latest'
+              })
+              .join(', ')
+        : null
 }
 
 const getCellStyle = (version?, projectImages?) => {
@@ -142,8 +144,7 @@ const ApplicationTable = () => {
                     if (
                         labels?.genericApplicationName &&
                         labels?.applicationType === 'services' &&
-                        (labels?.environment !== 'dev' ||
-                            spec.destination.namespace === 'paco')
+                        (labels?.environment !== 'dev' || spec.destination.namespace === 'paco')
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
