@@ -44,10 +44,6 @@ const compareVersions = (v1, v2) => {
     return 0
 }
 
-const isLatestVersion = (currentVersion, allVersions) => {
-    return allVersions.every(otherVersion => compareVersions(currentVersion, otherVersion) >= 0)
-}
-
 const fetchApplications = async () => {
     try {
         const fields = [
