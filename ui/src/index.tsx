@@ -97,20 +97,27 @@ const parseImageTag = images => {
         : ''
 }
 
-const getCellStyle = (version?, projectImages?) => {
+const getVersionRank = (currentVersion: string, allVersions: string[]): number => {
+    const sortedVersions = [...allVersions].sort((a, b) => compareVersions(b, a))
+    return sortedVersions.indexOf(currentVersion)
+}
+
+const getCellStyle = (version?: string, projectImages?): any => {
     let backgroundColor = '#07bc0c'
-    let color = '#white'
+    let color = 'white'
+
     if (!version) {
         backgroundColor = ''
     } else {
-        const isLatest = isLatestVersion(
-            version,
-            Object.values(projectImages).map((p: any) => p.imageTag)
-        )
-        if (!isLatest) {
+        const allVersions = Object.values(projectImages).map((p: any) => p.imageTag)
+        const rank = getVersionRank(version, allVersions)
+
+        if (rank === 1) {
             backgroundColor = '#f1c40f'
-            color = 'black'
+        } else if (rank > 1) {
+            backgroundColor = '#e67e22'
         }
+        color = rank > 0 ? 'black' : 'white'
     }
 
     return {
