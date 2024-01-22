@@ -143,7 +143,7 @@ const ApplicationTable = () => {
                         labels?.genericApplicationName &&
                         labels?.applicationType === 'services' &&
                         (labels?.environment !== 'dev' ||
-                            spec.source.destination.namespace !== 'paco')
+                            spec.destination.namespace !== 'paco')
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
