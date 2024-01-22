@@ -50,8 +50,6 @@ const isLatestVersion = (currentVersion, allVersions) => {
 
 const fetchApplications = async () => {
     try {
-        const labels = ['environment!=dev', 'applicationType=services']
-
         const fields = [
             'items.metadata.name',
             'items.metadata.labels',
@@ -65,7 +63,7 @@ const fetchApplications = async () => {
 
         const params = {
             fields: fields.join(','),
-            selector: labels.join(',')
+            selector: 'applicationType=services'
         }
 
         const queryString = Object.entries(params)
