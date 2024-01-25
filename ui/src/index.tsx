@@ -98,22 +98,38 @@ const getVersionRank = (currentVersion: string, allVersions: string[]): number =
     return sortedVersions.indexOf(currentVersion)
 }
 
+const getVersionDiff = (v1, v2) => {
+    const parts1 = v1.split('.').map(Number)
+    const parts2 = v2.split('.').map(Number)
+
+    return {
+        major: parts1[0] - parts2[0],
+        minor: parts1[1] - parts2[1],
+        patch: parts1[2] - parts2[2]
+    }
+}
+
 const getCellStyle = (version?: string, projectImages?): any => {
     let backgroundColor = '#07bc0c'
     let color = 'white'
 
     if (!version) {
         backgroundColor = ''
+    } else if (version.includes('-ST-')) {
+        backgroundColor = 'purple'
+        color = 'white'
     } else {
         const allVersions = Object.values(projectImages).map((p: any) => p.imageTag)
-        const rank = getVersionRank(version, allVersions)
+        const latestVersion = allVersions.sort((a, b) => compareVersions(b, a))[0]
+        const versionDiff = getVersionDiff(version, latestVersion)
 
-        if (rank === 1) {
+        if (versionDiff.major < 0 || versionDiff.minor < 0 || versionDiff.patch < -20) {
+            backgroundColor = 'red'
+        } else if (getVersionRank(version, allVersions) === 1) {
             backgroundColor = '#f1c40f'
-        } else if (rank > 1) {
+        } else if (getVersionRank(version, allVersions) > 1) {
             backgroundColor = '#e67e22'
         }
-        color = rank > 0 ? 'black' : 'white'
     }
 
     return {
