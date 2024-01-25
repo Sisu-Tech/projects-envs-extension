@@ -127,6 +127,7 @@ const getCellStyle = (version?: string, projectImages?): any => {
             backgroundColor = 'red'
         } else if (getVersionRank(version, allVersions) === 1) {
             backgroundColor = '#f1c40f'
+            color = 'black'
         } else if (getVersionRank(version, allVersions) > 1) {
             backgroundColor = '#e67e22'
         }
