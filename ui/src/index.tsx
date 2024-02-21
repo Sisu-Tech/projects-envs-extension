@@ -59,7 +59,7 @@ const fetchApplications = async () => {
 
         const params = {
             fields: fields.join(','),
-            selector: 'applicationType=services'
+            selector: 'applicationType=services,environment!=dev',
         }
 
         const queryString = Object.entries(params)
@@ -161,11 +161,10 @@ const ApplicationTable = () => {
                 const projectSet = new Set()
                 const groupedApps = data.items.reduce((acc, app) => {
                     const labels = app.metadata.labels
-                    const spec = app.spec
                     if (
                         labels?.genericApplicationName &&
                         labels?.applicationType === 'services' &&
-                        (labels?.environment !== 'dev' || spec.destination.namespace === 'paco')
+                        (labels?.environment !== 'dev')
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
