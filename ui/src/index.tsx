@@ -1,33 +1,88 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, CSSProperties } from 'react';
 
-const styles: any = {
-    tableWrapper: {
-        width: '100%',
-        maxHeight: 'calc(100vh - 101.6px)',
-        overflowY: 'auto',
-        position: 'relative'
-    },
-    tableRow: {
-        display: 'flex',
-        width: '100%'
-    },
-    tableCell: {
-        flex: 1,
-        padding: '8px',
-        border: '1px solid #ddd',
-        textAlign: 'left'
-    },
-    tableHeaderRow: {
-        position: 'sticky',
-        top: 0,
-        backgroundColor: '#f5f5f5',
-        zIndex: 1,
-        borderBottom: '2px solid #ccc'
-    },
-    tableBodyRowEven: {
-        backgroundColor: '#f9f9f9'
+// Function to detect dark mode based on Argo CD's approach
+const isDarkMode = (): boolean => {
+    // Check if document exists (for SSR compatibility)
+    if (typeof document !== 'undefined') {
+        // Check for Argo CD's theme classes
+        const appElement = document.getElementById('app');
+        if (appElement) {
+            // Check if any child has theme-dark class
+            const hasDarkTheme = appElement.querySelector('.theme-dark') !== null;
+            return hasDarkTheme;
+        }
+
+        // Fallback to other methods
+        return (
+            document.body.classList.contains('theme-dark') ||
+            document.documentElement.getAttribute('data-theme') === 'dark' ||
+            (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        );
     }
-}
+    return false;
+};
+
+const getStyles = () => {
+    const darkMode = isDarkMode();
+
+    return {
+        container: {
+            backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+            color: darkMode ? '#e1e1e1' : 'inherit',
+        } as CSSProperties,
+        title: {
+            fontSize: '24px',
+            fontWeight: 'bold',
+            marginBottom: '20px',
+            color: darkMode ? '#e1e1e1' : '#333',
+        } as CSSProperties,
+        tableWrapper: {
+            width: '100%',
+            maxHeight: 'calc(100vh - 101.6px)',
+            overflowY: 'auto',
+            position: 'relative',
+        } as CSSProperties,
+        tableRow: {
+            display: 'flex',
+            width: '100%',
+        } as CSSProperties,
+        tableCell: {
+            flex: 1,
+            padding: '8px',
+            border: darkMode ? '1px solid #444' : '1px solid #ddd',
+            textAlign: 'left',
+            color: darkMode ? '#e1e1e1' : 'inherit',
+        } as CSSProperties,
+        tableHeaderRow: {
+            position: 'sticky',
+            top: 0,
+            backgroundColor: darkMode ? '#333' : '#f5f5f5',
+            zIndex: 1,
+            borderBottom: darkMode ? '2px solid #555' : '2px solid #ccc',
+        } as CSSProperties,
+        tableBodyRowEven: {
+            backgroundColor: darkMode ? '#2a2a2a' : '#f9f9f9',
+        } as CSSProperties,
+        emptyCell: {
+            flex: 1,
+            padding: '8px',
+            border: darkMode ? '1px solid #444' : '1px solid #ddd',
+            textAlign: 'left',
+            color: darkMode ? '#e1e1e1' : 'inherit',
+            backgroundColor: darkMode ? '#1e1e1e' : '',
+        } as CSSProperties,
+        toggleButton: {
+            padding: '8px 16px',
+            backgroundColor: darkMode ? '#555' : '#eee',
+            color: darkMode ? '#fff' : '#333',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginBottom: '20px',
+            fontSize: '14px',
+        } as CSSProperties,
+    };
+};
 
 const compareVersions = (v1, v2) => {
     const parts1 = v1.split('.').map(Number)
@@ -109,12 +164,14 @@ const getVersionDiff = (v1, v2) => {
     }
 }
 
-const getCellStyle = (version?: string, projectImages?): any => {
+const getCellStyle = (version?: string, projectImages?): CSSProperties => {
+    const darkMode = isDarkMode();
     let backgroundColor = '#07bc0c'
     let color = 'white'
 
     if (!version) {
-        backgroundColor = ''
+        backgroundColor = darkMode ? '#1e1e1e' : '';
+        color = darkMode ? '#e1e1e1' : 'inherit';
     } else if (version.includes('-ST-')) {
         backgroundColor = 'purple'
         color = 'white'
@@ -124,14 +181,18 @@ const getCellStyle = (version?: string, projectImages?): any => {
         const versionDiff = getVersionDiff(version, latestVersion)
 
         if (versionDiff.major < 0 || versionDiff.minor < 0 || versionDiff.patch < -20) {
-            backgroundColor = 'red'
+            backgroundColor = darkMode ? '#a83232' : 'red';
         } else if (getVersionRank(version, allVersions) === 1) {
-            backgroundColor = '#f1c40f'
-            color = 'black'
+            backgroundColor = darkMode ? '#d4ac0d' : '#f1c40f';
+            color = 'black';
         } else if (getVersionRank(version, allVersions) > 1) {
-            backgroundColor = '#e67e22'
+            backgroundColor = darkMode ? '#b35900' : '#e67e22';
+        } else {
+            backgroundColor = darkMode ? '#0a6e0a' : '#07bc0c';
         }
     }
+
+    const styles = getStyles();
 
     return {
         ...styles.tableCell,
@@ -154,6 +215,8 @@ const ApplicationTable = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [sortedGenericNames, setSortedGenericNames] = useState([])
+
+    const styles = getStyles();
 
     useEffect(() => {
         fetchApplications().then(data => {
@@ -195,61 +258,61 @@ const ApplicationTable = () => {
     }, [])
 
     if (loading) {
-        return <div>Loading...</div>
+        return <div style={{ color: isDarkMode() ? '#e1e1e1' : 'inherit' }}>Loading...</div>;
     }
 
     if (error) {
-        return <div>Error: {error}</div>
+        return <div style={{ color: isDarkMode() ? '#e1e1e1' : 'inherit' }}>Error: {error}</div>;
     }
 
     return (
-        <div style={styles.tableWrapper}>
+        <div style={styles.container}>
             <div
-                className='argo-table-header'
-                style={{ ...styles.tableRow, ...styles.tableHeaderRow }}
-            >
-                <div style={styles.tableCell}>Application Name</div>
-                {projects.map(project => (
-                    <div style={styles.tableCell} key={project}>
-                        {formatProjectName(project)}
-                    </div>
-                ))}
-            </div>
-            <div className='argo-table-body'>
-                {sortedGenericNames.map((genericName, index) => {
-                    const serviceApplications = applications[genericName]
-                    return (
-                        <div
-                            style={{
-                                ...styles.tableRow,
-                                ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
-                            }}
-                            key={genericName}
-                        >
-                            <div style={styles.tableCell}>{genericName}</div>
-                            {projects.map(project => {
-                                const projectService = serviceApplications?.[project]
-                                if (!projectService) {
-                                    return <div style={styles.tableCell} key={project} />
-                                }
-
-                                const version = projectService.imageTag
-                                const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`
-                                return (
-                                    <div
-                                        style={getCellStyle(version, serviceApplications)}
-                                        key={project}
-                                        onClick={() => {
-                                            window.open(url, '_blank')
-                                        }}
-                                    >
-                                        {!version ? '' : version}
-                                    </div>
-                                )
-                            })}
+                style={styles.tableWrapper}>
+                <div className='argo-table-header' style={{ ...styles.tableRow, ...styles.tableHeaderRow }}>
+                    <div style={styles.tableCell}>Application Name</div>
+                    {projects.map(project => (
+                        <div style={styles.tableCell} key={project}>
+                            {formatProjectName(project)}
                         </div>
-                    )
-                })}
+                    ))}
+                </div>
+                <div className='argo-table-body'>
+                    {sortedGenericNames.map((genericName, index) => {
+                        const serviceApplications = applications[genericName]
+                        return (
+                            <div
+                                style={{
+                                    ...styles.tableRow,
+                                    ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
+                                }}
+                                key={genericName}
+                            >
+                                <div style={styles.tableCell}>{genericName}</div>
+                                {projects.map(project => {
+                                    const projectService = serviceApplications?.[project]
+                                    if (!projectService) {
+                                        return <div style={styles.emptyCell} key={project} />
+                                    }
+
+                                    const version = projectService.imageTag
+                                    const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`
+                                    return (
+                                        <div
+                                            style={getCellStyle(version, serviceApplications)}
+                                            key={project}
+                                            onClick={() => {
+                                                window.open(url, '_blank')
+                                            }}
+                                        >
+                                            {!version ? '' : version}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
         </div>
     )
