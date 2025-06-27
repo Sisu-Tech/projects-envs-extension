@@ -114,7 +114,7 @@ const fetchApplications = async () => {
 
         const params = {
             fields: fields.join(','),
-            selector: 'applicationType=services',
+            selector: 'applicationType=services,environment!=dev',
         }
 
         const queryString = Object.entries(params)
@@ -226,7 +226,8 @@ const ApplicationTable = () => {
                     const labels = app.metadata.labels
                     if (
                         labels?.genericApplicationName &&
-                        labels?.applicationType === 'services'
+                        labels?.applicationType === 'services' &&
+                        (labels?.environment !== 'dev')
                     ) {
                         const genericName = labels.genericApplicationName
                         const project = app.spec.project
