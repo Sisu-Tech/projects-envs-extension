@@ -1,4 +1,5 @@
 import React, { useEffect, useState, CSSProperties } from 'react';
+import type { ApplicationData, ApplicationResponse, GroupedApplications, Styles, VersionDiff } from './types';
 
 // Function to detect dark mode based on Argo CD's approach
 const isDarkMode = (): boolean => {
@@ -22,7 +23,7 @@ const isDarkMode = (): boolean => {
     return false;
 };
 
-const getStyles = () => {
+const getStyles = (): Styles => {
     const darkMode = isDarkMode();
 
     return {
@@ -84,101 +85,92 @@ const getStyles = () => {
     };
 };
 
-const compareVersions = (v1, v2) => {
-    const parts1 = v1.split('.').map(Number)
-    const parts2 = v2.split('.').map(Number)
+const compareVersions = (v1: string, v2: string): number => {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
 
     for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const num1 = i < parts1.length ? parts1[i] : 0
-        const num2 = i < parts2.length ? parts2[i] : 0
+        const num1 = i < parts1.length ? parts1[i] : 0;
+        const num2 = i < parts2.length ? parts2[i] : 0;
 
-        if (num1 > num2) return 1
-        if (num2 > num1) return -1
+        if (num1 > num2) return 1;
+        if (num2 > num1) return -1;
     }
 
-    return 0
-}
+    return 0;
+};
 
-const fetchApplications = async () => {
+const fetchApplications = async (): Promise<ApplicationResponse | null> => {
     try {
-        const fields = [
-            'items.metadata.name',
-            'items.metadata.labels',
-            'items.spec.project',
-            'items.operation.sync',
-            'items.status.sync.status',
-            'items.status.health',
-            'items.status.summary',
-            'items.spec'
-        ]
+        const fields = ['items.metadata.name', 'items.metadata.labels', 'items.spec', 'items.status.summary'];
 
         const params = {
             fields: fields.join(','),
-            selector: 'applicationType=services,environment!=dev',
-        }
+            selector: 'applicationType=services',
+        };
 
         const queryString = Object.entries(params)
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-            .join('&')
+            .join('&');
 
-        const url = `/api/v1/applications?${queryString}`
+        const url = `/api/v1/applications?${queryString}`;
 
-        const response = await fetch(url)
+        const response = await fetch(url);
         if (!response.ok) {
-            throw new Error('Network response was not ok')
+            throw new Error('Network response was not ok');
         }
-        return await response.json()
+        return (await response.json()) as ApplicationResponse;
     } catch (error) {
-        console.error('Fetch error:', error)
-        return null
+        console.error('Fetch error:', error);
+        return null;
     }
-}
+};
 
-const parseImageTag = images => {
+const parseImageTag = (images?: string[]): string => {
     return images
         ? images
-              .map(image => {
+              .map((image) => {
                   if (!image) {
-                      return ''
+                      return '';
                   }
-                  const parts = image.split(':')
-                  return parts.length > 1 ? parts[1].slice(0, 14) : 'latest'
+                  const parts = image.split(':');
+                  return parts.length > 1 ? parts[1].slice(0, 14) : 'latest';
               })
               .join(', ')
-        : ''
-}
+        : '';
+};
 
 const getVersionRank = (currentVersion: string, allVersions: string[]): number => {
-    const sortedVersions = [...allVersions].sort((a, b) => compareVersions(b, a))
-    return sortedVersions.indexOf(currentVersion)
-}
+    const sortedVersions = [...allVersions].sort((a, b) => compareVersions(b, a));
+    return sortedVersions.indexOf(currentVersion);
+};
 
-const getVersionDiff = (v1, v2) => {
-    const parts1 = v1.split('.').map(Number)
-    const parts2 = v2.split('.').map(Number)
+const getVersionDiff = (v1: string, v2: string): VersionDiff => {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
 
     return {
         major: parts1[0] - parts2[0],
         minor: parts1[1] - parts2[1],
-        patch: parts1[2] - parts2[2]
-    }
-}
+        patch: parts1[2] - parts2[2],
+    };
+};
 
-const getCellStyle = (version?: string, projectImages?): CSSProperties => {
+const getCellStyle = (version?: string, projectImages?: { [project: string]: ApplicationData }): CSSProperties => {
     const darkMode = isDarkMode();
-    let backgroundColor = '#07bc0c'
-    let color = 'white'
+    let backgroundColor = '#07bc0c';
+    let color = 'white';
 
     if (!version) {
         backgroundColor = darkMode ? '#1e1e1e' : '';
         color = darkMode ? '#e1e1e1' : 'inherit';
     } else if (version.includes('-ST-')) {
-        backgroundColor = 'purple'
-        color = 'white'
+        backgroundColor = 'purple';
+        color = 'white';
     } else {
-        const allVersions = Object.values(projectImages).map((p: any) => p.imageTag)
-        const latestVersion = allVersions.sort((a, b) => compareVersions(b, a))[0]
-        const versionDiff = getVersionDiff(version, latestVersion)
+        const allVersions = Object.values(projectImages || {}).map((p) => p.imageTag);
+        const latestVersion = allVersions.sort((a, b) => compareVersions(b, a))[0];
+        const versionDiff = getVersionDiff(version, latestVersion);
 
         if (versionDiff.major < 0 || versionDiff.minor < 0 || versionDiff.patch < -20) {
             backgroundColor = darkMode ? '#a83232' : 'red';
@@ -198,64 +190,58 @@ const getCellStyle = (version?: string, projectImages?): CSSProperties => {
         ...styles.tableCell,
         backgroundColor,
         color,
-        cursor: 'pointer'
-    }
-}
+        cursor: 'pointer',
+    };
+};
 
-const formatProjectName = name => {
+const formatProjectName = (name: string): string => {
     return name
         .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-}
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
 
 const ApplicationTable = () => {
-    const [applications, setApplications] = useState({})
-    const [projects, setProjects] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
-    const [sortedGenericNames, setSortedGenericNames] = useState([])
+    const [applications, setApplications] = useState<GroupedApplications>({});
+    const [projects, setProjects] = useState<string[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>('');
+    const [sortedGenericNames, setSortedGenericNames] = useState<string[]>([]);
 
     const styles = getStyles();
 
     useEffect(() => {
-        fetchApplications().then(data => {
+        fetchApplications().then((data) => {
             if (data) {
-                const projectSet = new Set()
-                const groupedApps = data.items.reduce((acc, app) => {
-                    const labels = app.metadata.labels
-                    if (
-                        labels?.genericApplicationName &&
-                        labels?.applicationType === 'services' &&
-                        (labels?.environment !== 'dev')
-                    ) {
-                        const genericName = labels.genericApplicationName
-                        const project = app.spec.project
-                        projectSet.add(project)
+                const projectSet = new Set<string>();
+                const groupedApps = data.items.reduce((acc: GroupedApplications, app) => {
+                    const labels = app.metadata.labels;
 
-                        if (!acc[genericName]) {
-                            acc[genericName] = {}
-                        }
-                        acc[genericName][project] = {
-                            name: app.metadata.name,
-                            imageTag: parseImageTag(app.status.summary.images)
-                        }
+                    const genericName = labels.genericApplicationName;
+                    const project = app.spec.project;
+                    projectSet.add(project);
+
+                    if (!acc[genericName]) {
+                        acc[genericName] = {};
                     }
-                    return acc
-                }, {})
-                const sortedGenericNames = Object.keys(groupedApps).sort((a, b) =>
-                    a.localeCompare(b)
-                )
-                const sortedProjects = Array.from(projectSet).sort()
-                setSortedGenericNames(sortedGenericNames)
-                setApplications(groupedApps)
-                setProjects(sortedProjects)
+                    acc[genericName][project] = {
+                        name: app.metadata.name,
+                        imageTag: parseImageTag(app.status.summary.images),
+                    };
+
+                    return acc;
+                }, {});
+                const sortedGenericNames = Object.keys(groupedApps).sort((a, b) => a.localeCompare(b));
+                const sortedProjects = Array.from(projectSet).sort();
+                setSortedGenericNames(sortedGenericNames);
+                setApplications(groupedApps);
+                setProjects(sortedProjects);
             } else {
-                setError('Failed to load applications')
+                setError('Failed to load applications');
             }
-            setLoading(false)
-        })
-    }, [])
+            setLoading(false);
+        });
+    }, []);
 
     if (loading) {
         return <div style={{ color: isDarkMode() ? '#e1e1e1' : 'inherit' }}>Loading...</div>;
@@ -267,65 +253,64 @@ const ApplicationTable = () => {
 
     return (
         <div style={styles.container}>
-            <div
-                style={styles.tableWrapper}>
-                <div className='argo-table-header' style={{ ...styles.tableRow, ...styles.tableHeaderRow }}>
+            <div style={styles.tableWrapper}>
+                <div className="argo-table-header" style={{ ...styles.tableRow, ...styles.tableHeaderRow }}>
                     <div style={styles.tableCell}>Application Name</div>
-                    {projects.map(project => (
+                    {projects.map((project: string) => (
                         <div style={styles.tableCell} key={project}>
                             {formatProjectName(project)}
                         </div>
                     ))}
                 </div>
-                <div className='argo-table-body'>
-                    {sortedGenericNames.map((genericName, index) => {
-                        const serviceApplications = applications[genericName]
+                <div className="argo-table-body">
+                    {sortedGenericNames.map((genericName: string, index: number) => {
+                        const serviceApplications = applications[genericName];
                         return (
                             <div
                                 style={{
                                     ...styles.tableRow,
-                                    ...(index % 2 === 0 ? styles.tableBodyRowEven : {})
+                                    ...(index % 2 === 0 ? styles.tableBodyRowEven : {}),
                                 }}
                                 key={genericName}
                             >
                                 <div style={styles.tableCell}>{genericName}</div>
-                                {projects.map(project => {
-                                    const projectService = serviceApplications?.[project]
+                                {projects.map((project: string) => {
+                                    const projectService = serviceApplications?.[project];
                                     if (!projectService) {
-                                        return <div style={styles.emptyCell} key={project} />
+                                        return <div style={styles.emptyCell} key={project} />;
                                     }
 
-                                    const version = projectService.imageTag
-                                    const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`
+                                    const version = projectService.imageTag;
+                                    const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`;
                                     return (
                                         <div
                                             style={getCellStyle(version, serviceApplications)}
                                             key={project}
                                             onClick={() => {
-                                                window.open(url, '_blank')
+                                                window.open(url, '_blank');
                                             }}
                                         >
                                             {!version ? '' : version}
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
-                        )
+                        );
                     })}
                 </div>
             </div>
         </div>
-    )
-}
-;((window: any) => {
+    );
+};
+((window: Window & typeof globalThis & { extensionsAPI?: any }) => {
     if (window && window.extensionsAPI) {
         window.extensionsAPI.registerSystemLevelExtension(
             ApplicationTable,
             'Applications Table',
             '/application-table',
-            'fa-table'
-        )
+            'fa-table',
+        );
     } else {
-        console.error('Argo CD extensions API is not available')
+        console.error('Argo CD extensions API is not available');
     }
-})(window)
+})(window);
