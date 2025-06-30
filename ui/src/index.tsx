@@ -227,6 +227,7 @@ const ApplicationTable = () => {
                     acc[genericName][project] = {
                         name: app.metadata.name,
                         imageTag: parseImageTag(app.status.summary.images),
+                        environment: labels.environment,
                     };
 
                     return acc;
@@ -281,7 +282,10 @@ const ApplicationTable = () => {
                                     }
 
                                     const version = projectService.imageTag;
-                                    const url = `https://argocd.sisutech.ee/applications/argocd/${projectService.name}`;
+                                    const isDev = projectService.environment === 'dev';
+                                    const url = `https://argocd.sisutech.${isDev ? 'dev' : 'ee'}/applications/argocd/${
+                                        projectService.name
+                                    }`;
                                     return (
                                         <div
                                             style={getCellStyle(version, serviceApplications)}
