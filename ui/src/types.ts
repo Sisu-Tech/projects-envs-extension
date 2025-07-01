@@ -54,6 +54,7 @@ export type ApplicationData = {
     name: string;
     imageTag: string;
     environment: string;
+    namespace?: string;
 };
 
 export type GroupedApplications = {
@@ -78,4 +79,6 @@ export type Styles = {
     tableBodyRowEven: CSSProperties;
     emptyCell: CSSProperties;
     toggleButton: CSSProperties;
+    dropdown: CSSProperties;
+    filterContainer: CSSProperties;
 };

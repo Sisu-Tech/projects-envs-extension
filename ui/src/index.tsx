@@ -82,6 +82,21 @@ const getStyles = (): Styles => {
             marginBottom: '20px',
             fontSize: '14px',
         } as CSSProperties,
+        dropdown: {
+            padding: '8px',
+            marginBottom: '20px',
+            backgroundColor: darkMode ? '#333' : '#f5f5f5',
+            color: darkMode ? '#e1e1e1' : '#333',
+            border: darkMode ? '1px solid #555' : '1px solid #ccc',
+            borderRadius: '4px',
+            fontSize: '14px',
+            width: '200px',
+        } as CSSProperties,
+        filterContainer: {
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+        } as CSSProperties,
     };
 };
 
@@ -207,6 +222,8 @@ const ApplicationTable = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
     const [sortedGenericNames, setSortedGenericNames] = useState<string[]>([]);
+    const [namespaces, setNamespaces] = useState<string[]>([]);
+    const [selectedNamespace, setSelectedNamespace] = useState<string>('');
 
     const styles = getStyles();
 
@@ -214,12 +231,18 @@ const ApplicationTable = () => {
         fetchApplications().then((data) => {
             if (data) {
                 const projectSet = new Set<string>();
+                const namespaceSet = new Set<string>();
+
                 const groupedApps = data.items.reduce((acc: GroupedApplications, app) => {
                     const labels = app.metadata.labels;
-
                     const genericName = labels.genericApplicationName;
                     const project = app.spec.project;
+                    const namespace = app.spec.destination?.namespace || '';
+
                     projectSet.add(project);
+                    if (namespace) {
+                        namespaceSet.add(namespace);
+                    }
 
                     if (!acc[genericName]) {
                         acc[genericName] = {};
@@ -228,21 +251,56 @@ const ApplicationTable = () => {
                         name: app.metadata.name,
                         imageTag: parseImageTag(app.status.summary.images),
                         environment: labels.environment,
+                        namespace: namespace,
                     };
 
                     return acc;
                 }, {});
+
                 const sortedGenericNames = Object.keys(groupedApps).sort((a, b) => a.localeCompare(b));
                 const sortedProjects = Array.from(projectSet).sort();
+                const sortedNamespaces = Array.from(namespaceSet).sort();
+
                 setSortedGenericNames(sortedGenericNames);
                 setApplications(groupedApps);
                 setProjects(sortedProjects);
+                setNamespaces(sortedNamespaces);
+
+                // Set default namespace if available
+                if (sortedNamespaces.length > 0) {
+                    setSelectedNamespace(''); // Empty string means "All namespaces"
+                }
             } else {
                 setError('Failed to load applications');
             }
             setLoading(false);
         });
     }, []);
+
+    const handleNamespaceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedNamespace(event.target.value);
+    };
+
+    const getFilteredGenericNames = (): string[] => {
+        if (!selectedNamespace) {
+            return sortedGenericNames;
+        }
+
+        return sortedGenericNames.filter((genericName) => {
+            const serviceApps = applications[genericName];
+            return Object.values(serviceApps).some((app) => app.namespace === selectedNamespace);
+        });
+    };
+
+    const getFilteredServiceApplications = (genericName: string, project: string) => {
+        const serviceApp = applications[genericName]?.[project];
+        if (!serviceApp) return null;
+
+        if (!selectedNamespace || serviceApp.namespace === selectedNamespace) {
+            return serviceApp;
+        }
+        return null;
+    };
 
     if (loading) {
         return <div style={{ color: isDarkMode() ? '#e1e1e1' : 'inherit' }}>Loading...</div>;
@@ -252,8 +310,24 @@ const ApplicationTable = () => {
         return <div style={{ color: isDarkMode() ? '#e1e1e1' : 'inherit' }}>Error: {error}</div>;
     }
 
+    const filteredGenericNames = getFilteredGenericNames();
+
     return (
         <div style={styles.container}>
+            <div style={styles.filterContainer}>
+                <label style={{ marginRight: '10px', color: isDarkMode() ? '#e1e1e1' : '#333' }}>
+                    Filter by Namespace:
+                </label>
+                <select value={selectedNamespace} onChange={handleNamespaceChange} style={styles.dropdown}>
+                    <option value="">All Namespaces</option>
+                    {namespaces.map((namespace) => (
+                        <option key={namespace} value={namespace}>
+                            {namespace}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
             <div style={styles.tableWrapper}>
                 <div className="argo-table-header" style={{ ...styles.tableRow, ...styles.tableHeaderRow }}>
                     <div style={styles.tableCell}>Application Name</div>
@@ -264,7 +338,7 @@ const ApplicationTable = () => {
                     ))}
                 </div>
                 <div className="argo-table-body">
-                    {sortedGenericNames.map((genericName: string, index: number) => {
+                    {filteredGenericNames.map((genericName: string, index: number) => {
                         const serviceApplications = applications[genericName];
                         return (
                             <div
@@ -276,7 +350,7 @@ const ApplicationTable = () => {
                             >
                                 <div style={styles.tableCell}>{genericName}</div>
                                 {projects.map((project: string) => {
-                                    const projectService = serviceApplications?.[project];
+                                    const projectService = getFilteredServiceApplications(genericName, project);
                                     if (!projectService) {
                                         return <div style={styles.emptyCell} key={project} />;
                                     }
