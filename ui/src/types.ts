@@ -57,9 +57,11 @@ export type ApplicationData = {
     namespace?: string;
 };
 
-export type GroupedApplications = {
+export type NamespacedApplications = {
     [genericName: string]: {
-        [project: string]: ApplicationData;
+        [project: string]: {
+            [namespace: string]: ApplicationData;
+        };
     };
 };
 

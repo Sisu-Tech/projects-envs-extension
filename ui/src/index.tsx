@@ -1,5 +1,5 @@
 import React, { useEffect, useState, CSSProperties } from 'react';
-import type { ApplicationData, ApplicationResponse, GroupedApplications, Styles, VersionDiff } from './types';
+import type { ApplicationData, ApplicationResponse, NamespacedApplications, Styles, VersionDiff } from './types';
 
 // Function to detect dark mode based on Argo CD's approach
 const isDarkMode = (): boolean => {
@@ -145,12 +145,13 @@ const parseImageTag = (images?: string[]): string => {
     return images
         ? images
               .map((image) => {
-                  if (!image) {
+                  if (!image || image.includes('telepresence')) {
                       return '';
                   }
                   const parts = image.split(':');
                   return parts.length > 1 ? parts[1].slice(0, 14) : 'latest';
               })
+              .filter(Boolean)
               .join(', ')
         : '';
 };
@@ -183,7 +184,16 @@ const getCellStyle = (version?: string, projectImages?: { [project: string]: App
         backgroundColor = 'purple';
         color = 'white';
     } else {
-        const allVersions = Object.values(projectImages || {}).map((p) => p.imageTag);
+        const allVersions = Object.values(projectImages || {})
+            .filter((p) => p.imageTag) // Filter out empty tags
+            .map((p) => p.imageTag);
+
+        if (allVersions.length === 0) {
+            backgroundColor = darkMode ? '#1e1e1e' : '';
+            color = darkMode ? '#e1e1e1' : 'inherit';
+            return { ...getStyles().tableCell, backgroundColor, color, cursor: 'pointer' };
+        }
+
         const latestVersion = allVersions.sort((a, b) => compareVersions(b, a))[0];
         const versionDiff = getVersionDiff(version, latestVersion);
 
@@ -217,7 +227,7 @@ const formatProjectName = (name: string): string => {
 };
 
 const ApplicationTable = () => {
-    const [applications, setApplications] = useState<GroupedApplications>({});
+    const [applications, setApplications] = useState<NamespacedApplications>({});
     const [projects, setProjects] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
@@ -233,7 +243,8 @@ const ApplicationTable = () => {
                 const projectSet = new Set<string>();
                 const namespaceSet = new Set<string>();
 
-                const groupedApps = data.items.reduce((acc: GroupedApplications, app) => {
+                // Modified to store apps by namespace
+                const groupedApps = data.items.reduce((acc: NamespacedApplications, app) => {
                     const labels = app.metadata.labels;
                     const genericName = labels.genericApplicationName;
                     const project = app.spec.project;
@@ -247,7 +258,13 @@ const ApplicationTable = () => {
                     if (!acc[genericName]) {
                         acc[genericName] = {};
                     }
-                    acc[genericName][project] = {
+
+                    if (!acc[genericName][project]) {
+                        acc[genericName][project] = {};
+                    }
+
+                    // Store by namespace to prevent overwriting
+                    acc[genericName][project][namespace] = {
                         name: app.metadata.name,
                         imageTag: parseImageTag(app.status.summary.images),
                         environment: labels.environment,
@@ -268,7 +285,7 @@ const ApplicationTable = () => {
 
                 // Set default namespace if available
                 if (sortedNamespaces.length > 0) {
-                    setSelectedNamespace(''); // Empty string means "All namespaces"
+                    setSelectedNamespace(sortedNamespaces[0]);
                 }
             } else {
                 setError('Failed to load applications');
@@ -286,20 +303,31 @@ const ApplicationTable = () => {
             return sortedGenericNames;
         }
 
-        return sortedGenericNames.filter((genericName) => {
+        const filtered = sortedGenericNames.filter((genericName) => {
             const serviceApps = applications[genericName];
-            return Object.values(serviceApps).some((app) => app.namespace === selectedNamespace);
+            if (!serviceApps) return false;
+
+            // Check if any project has the selected namespace
+            return Object.values(serviceApps).some((projectApps) =>
+                Object.keys(projectApps).includes(selectedNamespace),
+            );
         });
+
+        return filtered;
     };
 
     const getFilteredServiceApplications = (genericName: string, project: string) => {
-        const serviceApp = applications[genericName]?.[project];
-        if (!serviceApp) return null;
+        const projectApps = applications[genericName]?.[project];
+        if (!projectApps) return null;
 
-        if (!selectedNamespace || serviceApp.namespace === selectedNamespace) {
-            return serviceApp;
+        // If no namespace is selected, return the first app (any namespace)
+        if (!selectedNamespace) {
+            const firstNamespace = Object.keys(projectApps)[0];
+            return projectApps[firstNamespace];
         }
-        return null;
+
+        // Return the app for the selected namespace if it exists
+        return projectApps[selectedNamespace] || null;
     };
 
     if (loading) {
@@ -314,19 +342,20 @@ const ApplicationTable = () => {
 
     return (
         <div style={styles.container}>
-            <div style={styles.filterContainer}>
-                <label style={{ marginRight: '10px', color: isDarkMode() ? '#e1e1e1' : '#333' }}>
-                    Filter by Namespace:
-                </label>
-                <select value={selectedNamespace} onChange={handleNamespaceChange} style={styles.dropdown}>
-                    <option value="">All Namespaces</option>
-                    {namespaces.map((namespace) => (
-                        <option key={namespace} value={namespace}>
-                            {namespace}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            {namespaces.length > 1 && (
+                <div style={styles.filterContainer}>
+                    <label style={{ marginRight: '10px', color: isDarkMode() ? '#e1e1e1' : '#333' }}>
+                        Filter by Namespace:
+                    </label>
+                    <select value={selectedNamespace} onChange={handleNamespaceChange} style={styles.dropdown}>
+                        {namespaces.map((namespace) => (
+                            <option key={namespace} value={namespace}>
+                                {namespace}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             <div style={styles.tableWrapper}>
                 <div className="argo-table-header" style={{ ...styles.tableRow, ...styles.tableHeaderRow }}>
@@ -339,7 +368,6 @@ const ApplicationTable = () => {
                 </div>
                 <div className="argo-table-body">
                     {filteredGenericNames.map((genericName: string, index: number) => {
-                        const serviceApplications = applications[genericName];
                         return (
                             <div
                                 style={{
@@ -360,9 +388,19 @@ const ApplicationTable = () => {
                                     const url = `https://argocd.sisutech.${isDev ? 'dev' : 'ee'}/applications/argocd/${
                                         projectService.name
                                     }`;
+
+                                    // For cell styling, we need to convert the namespaced structure to the old format
+                                    const allAppsForProject = Object.values(applications[genericName]?.[project] || {});
+
                                     return (
                                         <div
-                                            style={getCellStyle(version, serviceApplications)}
+                                            style={getCellStyle(
+                                                version,
+                                                allAppsForProject.reduce((acc, app) => {
+                                                    acc[app.namespace] = app;
+                                                    return acc;
+                                                }, {} as any),
+                                            )}
                                             key={project}
                                             onClick={() => {
                                                 window.open(url, '_blank');
