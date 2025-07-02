@@ -54,11 +54,14 @@ export type ApplicationData = {
     name: string;
     imageTag: string;
     environment: string;
+    namespace?: string;
 };
 
-export type GroupedApplications = {
+export type NamespacedApplications = {
     [genericName: string]: {
-        [project: string]: ApplicationData;
+        [project: string]: {
+            [namespace: string]: ApplicationData;
+        };
     };
 };
 
@@ -78,4 +81,6 @@ export type Styles = {
     tableBodyRowEven: CSSProperties;
     emptyCell: CSSProperties;
     toggleButton: CSSProperties;
+    dropdown: CSSProperties;
+    filterContainer: CSSProperties;
 };
