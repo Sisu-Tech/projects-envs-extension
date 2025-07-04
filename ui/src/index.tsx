@@ -368,6 +368,13 @@ const ApplicationTable = () => {
                 </div>
                 <div className="argo-table-body">
                     {filteredGenericNames.map((genericName: string, index: number) => {
+                        const mergedProjects: Record<string, any> = {};
+
+                        Object.entries(applications[genericName]).forEach(([envKey, projects]) => {
+                            Object.entries(projects).forEach(([projectKey, projectValue]) => {
+                                mergedProjects[`${envKey}-${projectKey}`] = projectValue;
+                            });
+                        });
                         return (
                             <div
                                 style={{
@@ -389,18 +396,9 @@ const ApplicationTable = () => {
                                         projectService.name
                                     }`;
 
-                                    // For cell styling, we need to convert the namespaced structure to the old format
-                                    const allAppsForProject = Object.values(applications[genericName]?.[project] || {});
-
                                     return (
                                         <div
-                                            style={getCellStyle(
-                                                version,
-                                                allAppsForProject.reduce((acc, app) => {
-                                                    acc[app.namespace] = app;
-                                                    return acc;
-                                                }, {} as any),
-                                            )}
+                                            style={getCellStyle(version, mergedProjects)}
                                             key={project}
                                             onClick={() => {
                                                 window.open(url, '_blank');
