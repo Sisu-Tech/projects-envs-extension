@@ -17,7 +17,6 @@ const config = {
 	},
 	externals: {
 		react: "React",
-		"react/jsx-runtime": "ReactJSXRuntime",
 	},
 	module: {
 		rules: [
