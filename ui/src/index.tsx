@@ -417,14 +417,16 @@ const ApplicationTable = () => {
     );
 };
 ((window: Window & typeof globalThis & { extensionsAPI?: any }) => {
-    if (window && window.extensionsAPI) {
-        window.extensionsAPI.registerSystemLevelExtension(
-            ApplicationTable,
-            'Applications Table',
-            '/application-table',
-            'fa-table',
-        );
-    } else {
-        console.error('Argo CD extensions API is not available');
-    }
+	if (window?.extensionsAPI) {
+		window.setTimeout(() => {
+			window.extensionsAPI.registerSystemLevelExtension(
+				ApplicationTable,
+				"Applications Table",
+				"/application-table",
+				"fa-table",
+			);
+		}, 0);
+	} else {
+		console.error("Argo CD extensions API is not available");
+	}
 })(window);
